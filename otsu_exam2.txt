@@ -1,0 +1,39 @@
+a = imread("cameraman.tif");
+[counts, ~] = imhist(a);
+counts = counts(:)'; 
+total = sum(counts);
+p = counts / total;
+
+min_within_var = inf; 
+threshold = 0;
+
+for t = 1:256
+    Wb = sum(p(1:t));
+    Wf = 1 - Wb;
+    
+   if Wb == 0 || Wf == 0
+        continue;
+    end
+  
+    intensity_b = 0:(t-1);
+    mu_b = sum(intensity_b .* p(1:t)) / Wb;
+    
+    intensity_f = t:255;
+    mu_f = sum(intensity_f .* p(t+1:end)) / Wf;
+
+    var_b = sum(((intensity_b - mu_b).^2) .* p(1:t)) / Wb;
+    var_f = sum(((intensity_f - mu_f).^2) .* p(t+1:end)) / Wf;
+    
+    within_var = Wb * var_b + Wf * var_f;
+    
+   
+    if within_var < min_within_var
+        min_within_var = within_var;
+        threshold = t-1;
+    end
+end
+
+binary_img = a > threshold;
+subplot(1,2,1); imshow(a); title('Original Image');
+subplot(1,2,2); imshow(binary_img); 
+title(['Binarized (Threshold = ', num2str(threshold), ')']);
